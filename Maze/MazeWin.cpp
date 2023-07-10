@@ -1,0 +1,261 @@
+#include<iostream>
+#include<cstdlib>
+#include<cstring>
+#include<stdio.h>
+#include<stdlib.h>
+#include<ctime>
+#include<Windows.h>
+#include<conio.h>
+
+using namespace std;
+
+const int WALL = 0, PASS = 1, LIVESHROOM = 2, DEADSHROOM = 3, ROOM = 4, START = 5, FINISH = 6;
+
+HANDLE hConsole;
+
+class MazeSet{
+	private:
+		int **Maze_;
+	public:
+		MazeSet(){
+			int a = 1;
+			Maze_ = new int*[a];
+			for(int i=0; i<a; i++)
+				Maze_[i] = new int[a];
+		}
+		void setMaze(int width, int height);
+		bool deadEnd(int x, int y, int height, int width);
+		void mazeMake(int width, int height, int countroom, int roomheight, int roomwidth);
+		void searchShroom(int width, int Height);
+		void printMaze(int width, int Height);
+		~MazeSet(){
+			for(int i = 0; i < (sizeof(Maze_)/sizeof(*Maze_)); i++) 
+    			delete[] Maze_[i];
+    		delete[] Maze_;
+		}
+};
+
+void MazeSet::setMaze(int width, int height){
+	Maze_ = new int*[height]; 
+	for(int i = 0; i < height; i++)
+		Maze_[i] = new int[width];
+}
+
+bool MazeSet::deadEnd(int x, int y, int height, int width){
+	int a = 0;
+	if(x != 1){
+		if(Maze_[y][x-2] == PASS || Maze_[y][x-2] == ROOM)
+			a+=1;
+		}
+	else a+=1;
+	if(y != 1){
+		if(Maze_[y-2][x] == PASS || Maze_[y-2][x] == ROOM)
+			a+=1;
+		}
+	else a+=1;
+	if(x != width-2){
+		if(Maze_[y][x+2] == PASS || Maze_[y][x+2] == ROOM)
+			a+=1;
+		}
+	else a+=1;
+	if(y != height-2){
+		if(Maze_[y+2][x] == PASS || Maze_[y+2][x] == ROOM)
+			a+=1;
+		}
+	else a+=1;
+	if(a == 4)
+		return 1;
+	else
+		return 0;
+}
+
+void MazeSet::mazeMake(int width, int height, int countroom, int roomheight, int roomwidth){
+	int x, y, c, a;
+	bool b, swap = 1;
+	for(int i = 0; i < height; i++)
+		for(int j = 0; j < width; j++)
+			Maze_[i][j] = WALL;
+	roomheight--; roomwidth--; 
+	for(int l = 0; l < countroom; l++){ 
+		b = 1;					
+		while(b){
+			do{ 
+				if(roomwidth%4 == 0) 
+					x = 2*(rand()%(width/2))+1; 
+				else
+					x = 2*(rand()%(width/2))+2;
+				if(roomheight%4 == 0)	
+					y = 2*(rand()%(height/2))+1;
+				else
+					y = 2*(rand()%(height/2))+2;
+			} while(x < (roomwidth+2) || x > (width-roomwidth-2) || y < (roomheight+2) || y > (height-roomheight-2));
+			b = 0;
+			for(int i = (y-roomheight-2); i < (y+roomheight+2); i++)
+				for(int j = (x-roomwidth-2); j < (x+roomwidth+2); j++)
+					if(Maze_[i][j] == ROOM)
+						b = 1;
+			if(b)
+				continue;
+			for(int i = (y-roomheight/2); i < (y+roomheight/2+1); i++) 
+				for(int j = (x-roomwidth/2); j < (x+roomwidth/2+1); j++)
+					Maze_[i][j] = ROOM;
+			c = rand()%4; 
+			if(c == 0) Maze_[y+roomheight/2+1][x-roomwidth/2+2*(rand()%(roomwidth/2+1))] = ROOM;
+			if(c == 1) Maze_[y-roomheight/2-1][x-roomwidth/2+2*(rand()%(roomwidth/2+1))] = ROOM;
+			if(c == 2) Maze_[y-roomheight/2+2*(rand()%(roomheight/2+1))][x+roomwidth/2+1] = ROOM;
+			if(c == 3) Maze_[y-roomheight/2+2*(rand()%(roomheight/2+1))][x-roomwidth/2-1] = ROOM;
+			if(swap){
+				roomheight += roomwidth;
+				roomwidth = roomheight - roomwidth;
+				roomheight -= roomwidth;
+			}
+		}
+	}
+	x = 3; y = 3; a = 0; 
+	while(a < 10000){ 
+		Maze_[y][x] = PASS; a++;
+		while(1){
+			c = rand()%4; 
+			switch(c){ 
+				case 0: if(y != 1)
+					if(Maze_[y-2][x] == WALL){
+                    	Maze_[y-1][x] = PASS;
+						Maze_[y-2][x] = PASS;
+						y-=2;
+				}
+				case 1: if(y != height-2)      
+					if(Maze_[y+2][x] == WALL){
+						Maze_[y+1][x] = PASS;
+						Maze_[y+2][x] = PASS;
+						y+=2;
+				}
+				case 2: if(x != 1)
+					if(Maze_[y][x-2] == WALL){ 
+						Maze_[y][x-1] = PASS;
+						Maze_[y][x-2] = PASS;
+						x-=2;
+				}
+				case 3: if(x != width-2)
+					if(Maze_[y][x+2] == WALL){ 
+						Maze_[y][x+1] = PASS;
+						Maze_[y][x+2] = PASS;
+						x+=2;
+				}
+			}
+			if(deadEnd(x,y,height,width))
+			   break;
+		}
+		if(deadEnd(x,y,height,width)) 
+			do{
+				x = 2*(rand()%((width-1)/2))+1;
+				y = 2*(rand()%((height-1)/2))+1;
+			}while(Maze_[y][x] != PASS);
+	}
+}
+
+void MazeSet::searchShroom(int width, int height){
+	Maze_[1][1] = START; 
+	Maze_[height-2][width-2] = FINISH;
+	int x, y;
+	for(int i = 0; i < height; i++)
+		for(int j = 0; j < width; j++)
+			if(Maze_[i][j] == START){
+				x = j; y = i;
+			}
+	while(Maze_[y][x] != FINISH){ 
+		Maze_[y][x] = LIVESHROOM; 
+		if(Maze_[y][x+1] == PASS){ 
+			Maze_[y][x+1] = LIVESHROOM;
+			x+=2;
+			continue;
+		}
+		
+		if(Maze_[y][x-1] == PASS){ 
+			Maze_[y][x-1] = LIVESHROOM;
+			x-=2;
+			continue;
+		}
+		
+		if(Maze_[y+1][x] == PASS){
+			Maze_[y+1][x] = LIVESHROOM;
+			y+=2;
+			continue;
+		}
+		
+		if(Maze_[y-1][x] == PASS){ 
+			Maze_[y-1][x] = LIVESHROOM;
+			y-=2;
+			continue;
+		}
+		
+		if(Maze_[y][x+1] != PASS && Maze_[y][x-1] != PASS && Maze_[y+1][x] != PASS &&  Maze_[y-1][x] != PASS){
+			Maze_[y][x] = DEADSHROOM;
+			if(Maze_[y][x+1] == LIVESHROOM){ 
+				Maze_[y][x+1] = DEADSHROOM;
+				x+=2;
+				continue;
+			}
+			if(Maze_[y][x-1] == LIVESHROOM){ 
+				Maze_[y][x-1] = DEADSHROOM;
+				x-=2;
+				continue;
+			}
+			if(Maze_[y+1][x] == LIVESHROOM){ 
+				Maze_[y+1][x] = DEADSHROOM;
+				y+=2;
+				continue;
+			}
+			if(Maze_[y-1][x] == LIVESHROOM){ 
+				Maze_[y-1][x] = DEADSHROOM;
+				y-=2;
+				continue;
+			}
+		}
+	}
+	Maze_[0][1] = LIVESHROOM;
+	Maze_[height-1][width-2] = LIVESHROOM;
+	Maze_[height-2][width-2] = LIVESHROOM;
+	for(int i = 0; i < height; i++)
+		for(int j = 0; j < width; j++)
+			if(Maze_[i][j] == DEADSHROOM)
+				Maze_[i][j] = PASS;
+}
+
+
+void MazeSet::printMaze(int width, int height){
+	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	for(int i = 0; i < height; i++){
+		for(int j = 0; j < width; j++){
+			switch(Maze_[i][j]){
+				case WALL: SetConsoleTextAttribute(hConsole, FOREGROUND_BLUE | BACKGROUND_BLUE); cout<<"a "; break;
+				case ROOM: SetConsoleTextAttribute(hConsole, BACKGROUND_INTENSITY); cout<<"  "; break;
+				case LIVESHROOM: SetConsoleTextAttribute(hConsole, FOREGROUND_RED | BACKGROUND_RED); cout<<"b "; break;
+				case PASS: SetConsoleTextAttribute(hConsole, BACKGROUND_INTENSITY); cout<<"  "; break;
+			}
+		}
+		SetConsoleTextAttribute(hConsole, 0);
+		cout<<". "<<endl;
+		}
+	cout<<endl;	
+}
+
+int main(){
+	setlocale(LC_ALL,"Russian");
+	srand(time(NULL));
+	int height, width, countroom;
+	int roomheight = 3, roomwidth = 5;
+	MazeSet mazePoint;
+	cout<<"¬ведите ширину либиринта (число должно быть нечетным!): ";
+	cin>>width;
+	cout<<"¬ведите высоту либиринта (число должно быть нечетным!): ";
+	cin>>height;
+	cout<<"¬ведите количество комнат (размер комнаты: "<<roomheight<<'x'<<roomwidth<<"): ";
+	cin>>countroom;
+	cout<<endl;
+	mazePoint.setMaze(width, height);
+	mazePoint.mazeMake(width, height, countroom, roomheight, roomwidth);
+	mazePoint.searchShroom(width, height);
+	mazePoint.printMaze(width, height);
+	system("pause");
+    return 0;
+}
