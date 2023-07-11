@@ -22,7 +22,7 @@ class MazeSet{
 		void setMaze(int width, int height);
 		bool deadEnd(int x, int y, int height, int width);
 		void mazeMake(int width, int height, int countroom, int roomheight, int roomwidth);
-		void searchShroom(int width, int Height);
+		void searchWay(int width, int Height);
 		void printMaze(int width, int Height);
 		~MazeSet(){
 			for(int i = 0; i < (sizeof(Maze_)/sizeof(*Maze_)); i++) 
@@ -149,7 +149,7 @@ void MazeSet::mazeMake(int width, int height, int countroom, int roomheight, int
 	}
 }
 
-void MazeSet::searchShroom(int width, int height){
+void MazeSet::searchWay(int width, int height){
 	Maze_[1][1] = START; 
 	Maze_[height-2][width-2] = FINISH;
 	int x, y;
@@ -248,7 +248,7 @@ int main(){
 	cout<<endl;
 	mazePoint.setMaze(width, height);
 	mazePoint.mazeMake(width, height, countroom, roomheight, roomwidth);
-	mazePoint.searchShroom(width, height);
+	mazePoint.searchWay(width, height);
 	mazePoint.printMaze(width, height);
 	system("pause");
     return 0;
